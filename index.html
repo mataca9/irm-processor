@@ -1,6 +1,10 @@
 <div id="app">
-  <canvas ref="canvas"></canvas>
-  <button @click="getPixel(10,10)">get pixels</button>
+  <canvas ref="image"></canvas>
+  <canvas ref="histogram_canvas"></canvas>
+  <br/>
+  <button @click="adjustBrightness()">Adjust Brightness</button>
+  <button @click="drawHistogram()">Histogram</button>
+  <button @click="threshold()">Threshold</button>
 </div>
 <script src="js/vue.js"></script>
 <script src="js/processor.js"></script>
