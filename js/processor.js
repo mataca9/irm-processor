@@ -5,7 +5,7 @@ new Vue({
   },
 
   mounted: function() {
-    this.draw('assets/picture.png');
+    this.draw('assets/images/fatia01.bmp');
   },
 
   methods: {
