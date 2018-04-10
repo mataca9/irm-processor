@@ -2,7 +2,7 @@ new Vue({
   el: "#app",
   data: {
     imagedata: null,
-    canvas: null,
+    image: null,
     histogram: null
   },
 
@@ -15,12 +15,12 @@ new Vue({
       var img = new Image();
       img.src = file;
       img.crossOrigin = "Anonymous";
-      this.canvas = this.$refs['image'];
+      this.image = this.$refs['image'];
 
       img.addEventListener("load", () => {
-        this.canvas.width = img.width;
-        this.canvas.height = img.height;
-        this.canvas
+        this.image.width = img.width;
+        this.image.height = img.height;
+        this.image
           .getContext("2d")
           .drawImage(
             img,
@@ -30,15 +30,15 @@ new Vue({
             img.height,
             0,
             0,
-            this.canvas.width,
-            this.canvas.height
+            this.image.width,
+            this.image.height
           );
         this.imagedata = this.getImageData(img);
       });
     },
 
     getImageData(image) {
-      const ctx = this.canvas.getContext("2d");
+      const ctx = this.image.getContext("2d");
       ctx.drawImage(image, 0, 0);
 
       return ctx.getImageData(0, 0, image.width, image.height);
@@ -57,20 +57,24 @@ new Vue({
       return pixel;
     },
 
+    writePixel(image, x, y, r,g,b,a=255){
+      const position = (x + image.width * y) * 4;
+      const d = image.data;
+      [d[position],
+      d[position + 1],
+      d[position + 2],
+      d[position + 3]] = [r,g,b,a];
+    },
+
     getIntensity(r,g,b){
       return parseInt(0.2126*r + 0.7152*g + 0.0722*b);
     },
+
 
     setColor(d, i, r, g, b){
       d[i]    = r;
       d[i+1]  = g;
       d[i+2]  = b;
-    },
-
-    setPixelColor(pixel, r, g, b){
-      pixel.r = r;
-      pixel.g = g;
-      pixel.b = b;
     },
 
     drawHistogram() {
@@ -88,7 +92,7 @@ new Vue({
         }
       }
 
-      // Controi histograma
+      // Constroi histograma
       this.histogram = this.$refs['histogram_canvas'];
       this.histogram.width = 512;
       this.histogram.height = 256;
@@ -103,11 +107,11 @@ new Vue({
 
           let value = (values[x] * this.histogram.height / max);
 
-          if (value < y){
+          if (this.histogram.height - value < y) {
             color = 0;
           } 
                 
-          let position =  (x + 512 * y) * 4;
+          let position =  (x + this.histogram.width * y) * 4;
           data[position]      = color;
           data[position + 1]  = color;
           data[position + 2]  = color;
@@ -115,24 +119,6 @@ new Vue({
         }
       }
       histogram_imagedata.data = data;
-      
-
-      /*
-      for (var i=0;i<histogram_imagedata.data.length;i+=4)
-      {
-        let x =  i % 512;
-        let y =  parseInt(i / 512);
-        
-        let color = 255;
-        if (values[x] >= y){
-          color = 0;
-        }  
-
-        histogram_imagedata.data[i+0]=color;
-        histogram_imagedata.data[i+1]=color;
-        histogram_imagedata.data[i+2]=color;
-        histogram_imagedata.data[i+3]=255;
-      }*/
       ctx.putImageData(histogram_imagedata, 0, 0);
     },
 
@@ -141,9 +127,7 @@ new Vue({
       const values = [];
       let max = 0;
       for (let i=0; i<d.length; i+=4) {
-        let r = d[i];
-        let g = d[i+1];
-        let b = d[i+2];
+        const [r,g,b] = d.slice(i, i+3);
         const intensity = this.getIntensity(r,g,b);
 
         max = Math.max(max, intensity);
@@ -158,18 +142,40 @@ new Vue({
       let max = this.getMaxIntensity();
       console.log(max);
       for (let i=0; i<d.length; i+=4) {
-        let r = d[i];
-        let g = d[i+1];
-        let b = d[i+2];
+        const [r,g,b] = d.slice(i, i+3);
         const intensity = this.getIntensity(r,g,b);
         const adjusted = intensity * 255 / max;
         if(intensity > 0){
           this.setColor(d, i, adjusted, adjusted, adjusted);
         }
       }
-
-      const ctx = this.canvas.getContext("2d");
+      
+      const ctx = this.image.getContext("2d");
       ctx.putImageData(this.imagedata, 0, 0);
+    },
+    
+    median(canvas, w){
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const hw = parseInt(w/2);
+      
+      for(let x = 0; x < imagedata.width; x++){
+        for(let y = 0; y < imagedata.height; y++){
+          const w_list = [];
+          for(let xx = x-hw; xx <= x + hw; xx++){
+            for(let yy = y-hw; yy <= y + hw; yy++){
+              const pixel = this.getPixel(imagedata, xx, yy);
+              const intensity = this.getIntensity(pixel.r,pixel.g,pixel.b);
+              w_list.push(intensity);
+            }
+          }
+          const value = w_list.sort((a,b) => a-b)[parseInt(w*w/2)];
+          this.writePixel(result, x, y, value, value, value, 255);
+        }
+      }
+
+      ctx.putImageData(result, 0,0);
     },
 
     threshold() {
@@ -179,9 +185,7 @@ new Vue({
 
       const d = this.imagedata.data;
       for (let i=0; i<d.length; i+=4) {
-        let r = d[i];
-        let g = d[i+1];
-        let b = d[i+2];
+        const [r,g,b] = d.slice(i, i+3);
         const intensity = this.getIntensity(r,g,b);
 
         if(intensity > WHITE && intensity < GRAY) {
@@ -193,7 +197,7 @@ new Vue({
         }
       }
       
-      const ctx = this.canvas.getContext("2d");
+      const ctx = this.image.getContext("2d");
       ctx.putImageData(this.imagedata, 0, 0);
     }
   }
