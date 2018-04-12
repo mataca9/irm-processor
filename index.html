@@ -2,9 +2,9 @@
   <canvas ref="image"></canvas>
   <canvas ref="histogram_canvas"></canvas>
   <br/>
-  <button @click="adjustBrightness()">Adjust Brightness</button>
+  <button @click="adjustBrightness(image)">Adjust Brightness</button>
   <button @click="drawHistogram()">Histogram</button>
-  <button @click="threshold()">Threshold</button>
+  <button @click="threshold(image)">Apply Threshold</button>
   <button @click="median(image,3)">Median image</button>
   <button @click="median(histogram,3)">Median histogram</button>
 </div>

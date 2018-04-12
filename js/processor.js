@@ -70,7 +70,6 @@ new Vue({
       return parseInt(0.2126*r + 0.7152*g + 0.0722*b);
     },
 
-
     setColor(d, i, r, g, b){
       d[i]    = r;
       d[i+1]  = g;
@@ -122,8 +121,8 @@ new Vue({
       ctx.putImageData(histogram_imagedata, 0, 0);
     },
 
-    getMaxIntensity(){
-      const d = this.imagedata.data;
+    getMaxIntensity(imagedata){
+      const d = imagedata.data;
       const values = [];
       let max = 0;
       for (let i=0; i<d.length; i+=4) {
@@ -136,22 +135,23 @@ new Vue({
       return max;
     },
 
-    adjustBrightness() {
-      const d = this.imagedata.data;
-      const values = [];
-      let max = this.getMaxIntensity();
-      console.log(max);
-      for (let i=0; i<d.length; i+=4) {
-        const [r,g,b] = d.slice(i, i+3);
-        const intensity = this.getIntensity(r,g,b);
-        const adjusted = intensity * 255 / max;
-        if(intensity > 0){
-          this.setColor(d, i, adjusted, adjusted, adjusted);
+    adjustBrightness(canvas) {
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      let max = this.getMaxIntensity(imagedata);
+      for(let x = 0; x < imagedata.width; x++){
+        for(let y = 0; y < imagedata.height; y++){
+          const pixel = this.getPixel(imagedata, x, y);
+          const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+          const adjusted = intensity * 255 / max;
+          if(intensity > 0){
+            this.writePixel(imagedata, x, y, adjusted, adjusted, adjusted);
+          }
         }
       }
       
-      const ctx = this.image.getContext("2d");
-      ctx.putImageData(this.imagedata, 0, 0);
+      ctx.putImageData(imagedata, 0, 0);
     },
     
     median(canvas, w){
@@ -178,27 +178,56 @@ new Vue({
       ctx.putImageData(result, 0,0);
     },
 
-    threshold() {
-      const WHITE   = 1;
-      const GRAY    = 76;
-      const LIQUID  = 96;
+    calculateThreshold(canvas) {
+      if(!canvas){
+        return [0,0,0];
+      }
 
-      const d = this.imagedata.data;
-      for (let i=0; i<d.length; i+=4) {
-        const [r,g,b] = d.slice(i, i+3);
-        const intensity = this.getIntensity(r,g,b);
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        if(intensity > WHITE && intensity < GRAY) {
-          this.setColor(d, i, 255, 0, 0);
-        } else if (intensity > GRAY && intensity < LIQUID) {
-          this.setColor(d, i, 0, 255, 0);
-        } else if (intensity > LIQUID && intensity < 255) {
-          this.setColor(d, i, 0, 0, 255);
+      const values = [...new Array(256)].map(v => 0);
+
+      for(let x = 0; x < imagedata.width; x++){
+        for(let y = 0; y < imagedata.height; y++){
+          const pixel = this.getPixel(imagedata, x, y);
+          const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+
+          if(intensity === 0){
+            values[x]++;
+          }
+        }
+      }
+
+      const avg = values.reduce((a,b) => (a+b)) / values.filter(v => v > 0).length;
+      const avgH = values.reduce((a,b) => (b > avg ? a+b : a)) / values.filter(v => v > avg).length;
+      const avgL = values.reduce((a,b) => (b < avg ? a+b : a)) / values.filter(v => v < avg).length;
+
+      return [avgL, avg, avgH]
+    },
+
+    threshold(canvas) {
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      const [WHITE, GRAY, LIQUID] = this.calculateThreshold(this.histogram);
+
+      for(let x = 0; x < imagedata.width; x++){
+        for(let y = 0; y < imagedata.height; y++){
+          const pixel = this.getPixel(imagedata, x, y);
+          const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+
+          if(intensity > WHITE && intensity < GRAY) {
+            this.writePixel(imagedata, x, y, 0, 0, 255);
+          } else if (intensity > GRAY && intensity < LIQUID) {
+            this.writePixel(imagedata, x, y, 255, 0, 0);            
+          } else if (intensity > LIQUID && intensity < 255) {
+            this.writePixel(imagedata, x, y, 0, 255, 0);            
+          }
         }
       }
       
-      const ctx = this.image.getContext("2d");
-      ctx.putImageData(this.imagedata, 0, 0);
+      ctx.putImageData(imagedata, 0, 0);
     }
   }
 
