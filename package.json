@@ -1,0 +1,25 @@
+{
+  "name": "irm-processor",
+  "version": "1.0.0",
+  "description": "## Pre requisite - node - npm",
+  "main": "server.js",
+  "dependencies": {
+    "connect": "^3.6.6",
+    "serve-static": "^1.13.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mataca9/irm-processor.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mataca9/irm-processor/issues"
+  },
+  "homepage": "https://github.com/mataca9/irm-processor#readme"
+}

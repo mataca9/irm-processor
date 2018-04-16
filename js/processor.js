@@ -297,6 +297,20 @@ new Vue({
       }
 
       ctx.putImageData(result, 0, 0);
+    },
+
+    pipeline() {
+      const element = {x: 2, y: 2,data:[[10,10,10],[10,10,10],[10,10,10]]}; 
+      this.erosion(this.image, element);
+      this.dilation(this.image, element);
+      this.median(this.image, 3);
+      this.drawHistogram();
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.threshold(this.image);
     }
 
   }
