@@ -7,6 +7,8 @@
   <button @click="threshold(image)">Apply Threshold</button>
   <button @click="median(image,3)">Median image</button>
   <button @click="median(histogram,3)">Median histogram</button>
+  <button @click="erosion(image,{x: 2, y: 2,data:[[10,10,10],[10,10,10],[10,10,10]]})">Erosion</button>
+  <button @click="dilation(image,{x: 2, y: 2,data:[[10,10,10],[10,10,10],[10,10,10]]})">Dilate</button>
 </div>
 <script src="js/vue.js"></script>
 <script src="js/processor.js"></script>

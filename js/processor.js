@@ -6,7 +6,8 @@ new Vue({
     histogram: null
   },
 
-  mounted: function() {
+  mounted: function () {
+    //this.draw('assets/moonlanding.png');
     this.draw('assets/images/fatia01.bmp');
   },
 
@@ -57,23 +58,23 @@ new Vue({
       return pixel;
     },
 
-    writePixel(image, x, y, r,g,b,a=255){
+    writePixel(image, x, y, r, g, b, a = 255) {
       const position = (x + image.width * y) * 4;
       const d = image.data;
       [d[position],
       d[position + 1],
       d[position + 2],
-      d[position + 3]] = [r,g,b,a];
+      d[position + 3]] = [r, g, b, a];
     },
 
-    getIntensity(r,g,b){
-      return parseInt(0.2126*r + 0.7152*g + 0.0722*b);
+    getIntensity(r, g, b) {
+      return parseInt(0.2126 * r + 0.7152 * g + 0.0722 * b);
     },
 
-    setColor(d, i, r, g, b){
-      d[i]    = r;
-      d[i+1]  = g;
-      d[i+2]  = b;
+    setColor(d, i, r, g, b) {
+      d[i] = r;
+      d[i + 1] = g;
+      d[i + 2] = b;
     },
 
     drawHistogram() {
@@ -83,10 +84,10 @@ new Vue({
       // Gera lista de intensidades
       for (let i = 0; i < d.length; i += 4) {
         let r = d[i];
-        let g = d[i+1];
-        let b = d[i+2];
-        const intensity = this.getIntensity(r,g,b);
-        if(intensity > 0){
+        let g = d[i + 1];
+        let b = d[i + 2];
+        const intensity = this.getIntensity(r, g, b);
+        if (intensity > 0) {
           values[intensity] = values[intensity] ? values[intensity] + 1 : 1;
         }
       }
@@ -98,36 +99,36 @@ new Vue({
       const ctx = this.histogram.getContext("2d");
       const histogram_imagedata = ctx.createImageData(this.histogram.width, this.histogram.height);
 
-      const max = values.reduce((a, b) => { return Math.max(a,b)});
+      const max = values.reduce((a, b) => { return Math.max(a, b) });
       const data = histogram_imagedata.data;
-      for(let x = 0; x < this.histogram.width; x++){
-        for(let y = 0; y < this.histogram.height; y++){
+      for (let x = 0; x < this.histogram.width; x++) {
+        for (let y = 0; y < this.histogram.height; y++) {
           let color = 255;
 
           let value = (values[x] * this.histogram.height / max);
 
           if (this.histogram.height - value < y) {
             color = 0;
-          } 
-                
-          let position =  (x + this.histogram.width * y) * 4;
-          data[position]      = color;
-          data[position + 1]  = color;
-          data[position + 2]  = color;
-          data[position + 3]  = 255;
+          }
+
+          let position = (x + this.histogram.width * y) * 4;
+          data[position] = color;
+          data[position + 1] = color;
+          data[position + 2] = color;
+          data[position + 3] = 255;
         }
       }
       histogram_imagedata.data = data;
       ctx.putImageData(histogram_imagedata, 0, 0);
     },
 
-    getMaxIntensity(imagedata){
+    getMaxIntensity(imagedata) {
       const d = imagedata.data;
       const values = [];
       let max = 0;
-      for (let i=0; i<d.length; i+=4) {
-        const [r,g,b] = d.slice(i, i+3);
-        const intensity = this.getIntensity(r,g,b);
+      for (let i = 0; i < d.length; i += 4) {
+        const [r, g, b] = d.slice(i, i + 3);
+        const intensity = this.getIntensity(r, g, b);
 
         max = Math.max(max, intensity);
       }
@@ -140,47 +141,47 @@ new Vue({
       const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
       let max = this.getMaxIntensity(imagedata);
-      for(let x = 0; x < imagedata.width; x++){
-        for(let y = 0; y < imagedata.height; y++){
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
           const pixel = this.getPixel(imagedata, x, y);
           const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
           const adjusted = intensity * 255 / max;
-          if(intensity > 0){
+          if (intensity > 0) {
             this.writePixel(imagedata, x, y, adjusted, adjusted, adjusted);
           }
         }
       }
-      
+
       ctx.putImageData(imagedata, 0, 0);
     },
-    
-    median(canvas, w){
+
+    median(canvas, w) {
       const ctx = canvas.getContext("2d");
       const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const result = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const hw = parseInt(w/2);
-      
-      for(let x = 0; x < imagedata.width; x++){
-        for(let y = 0; y < imagedata.height; y++){
+      const hw = parseInt(w / 2);
+
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
           const w_list = [];
-          for(let xx = x-hw; xx <= x + hw; xx++){
-            for(let yy = y-hw; yy <= y + hw; yy++){
+          for (let xx = x - hw; xx <= x + hw; xx++) {
+            for (let yy = y - hw; yy <= y + hw; yy++) {
               const pixel = this.getPixel(imagedata, xx, yy);
-              const intensity = this.getIntensity(pixel.r,pixel.g,pixel.b);
+              const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
               w_list.push(intensity);
             }
           }
-          const value = w_list.sort((a,b) => a-b)[parseInt(w*w/2)];
+          const value = w_list.sort((a, b) => a - b)[parseInt(w * w / 2)];
           this.writePixel(result, x, y, value, value, value, 255);
         }
       }
 
-      ctx.putImageData(result, 0,0);
+      ctx.putImageData(result, 0, 0);
     },
 
     calculateThreshold(canvas) {
-      if(!canvas){
-        return [0,0,0];
+      if (!canvas) {
+        return [0, 0, 0];
       }
 
       const ctx = canvas.getContext("2d");
@@ -188,22 +189,22 @@ new Vue({
 
       const values = [...new Array(256)].map(v => 0);
 
-      for(let x = 0; x < imagedata.width; x++){
-        for(let y = 0; y < imagedata.height; y++){
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
           const pixel = this.getPixel(imagedata, x, y);
           const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
 
-          if(intensity === 0){
+          if (intensity === 0) {
             values[x]++;
           }
         }
       }
 
-      const avg = values.reduce((a,b) => (a+b)) / values.filter(v => v > 0).length;
-      const avgH = values.reduce((a,b) => (b > avg ? a+b : a)) / values.filter(v => v > avg).length;
-      const avgL = values.reduce((a,b) => (b < avg ? a+b : a)) / values.filter(v => v < avg).length;
+      const avg = values.reduce((a, b) => (a + b)) / values.filter(v => v > 0).length;
+      const avgH = values.reduce((a, b) => (b > avg ? a + b : a)) / values.filter(v => v > avg).length;
+      const avgL = values.reduce((a, b) => (b < avg ? a + b : a)) / values.filter(v => v < avg).length;
 
-      return [avgL, avg, avgH]
+      return [avgL, avg, avgH];
     },
 
     threshold(canvas) {
@@ -212,23 +213,92 @@ new Vue({
 
       const [WHITE, GRAY, LIQUID] = this.calculateThreshold(this.histogram);
 
-      for(let x = 0; x < imagedata.width; x++){
-        for(let y = 0; y < imagedata.height; y++){
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
           const pixel = this.getPixel(imagedata, x, y);
           const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
 
-          if(intensity > WHITE && intensity < GRAY) {
+          if (intensity > WHITE && intensity < GRAY) {
             this.writePixel(imagedata, x, y, 0, 0, 255);
           } else if (intensity > GRAY && intensity < LIQUID) {
-            this.writePixel(imagedata, x, y, 255, 0, 0);            
+            this.writePixel(imagedata, x, y, 255, 0, 0);
           } else if (intensity > LIQUID && intensity < 255) {
-            this.writePixel(imagedata, x, y, 0, 255, 0);            
+            this.writePixel(imagedata, x, y, 0, 255, 0);
           }
         }
       }
-      
+
       ctx.putImageData(imagedata, 0, 0);
+    },
+
+    erosion(canvas, element) {
+      console.log(element)
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
+
+          let pixel = this.getPixel(imagedata, x, y);
+          let intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+
+          if (intensity == 0) continue;
+
+          const data = element.data;
+          const xsize = data.length;
+          let min = 999;
+          for (let xx = x - element.x, ex = 0; ex < xsize; xx++ , ex++) {
+            const ysize = data[ex].length;
+            for (let yy = y - element.y, ey = 0; ey < ysize; yy++ , ey++) {
+              if (data[ex][ey]) {
+                pixel = this.getPixel(imagedata, xx, yy);
+                intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+                min = Math.min(min, intensity);
+              }
+            }
+          }
+          this.writePixel(result, x, y, min, min, min);
+        }
+      }
+
+      ctx.putImageData(result, 0, 0);
+    },
+
+    dilation(canvas, element) {
+      console.log(element)
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
+
+          let pixel = this.getPixel(imagedata, x, y);
+          let intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+
+          if (intensity == 0) continue;
+
+          const data = element.data;
+          const xsize = data.length;
+          let max = 0;
+          for (let xx = x - element.x, ex = 0; ex < xsize; xx++ , ex++) {
+            const ysize = data[ex].length;
+            for (let yy = y - element.y, ey = 0; ey < ysize; yy++ , ey++) {
+              if (data[ex][ey]) {
+                pixel = this.getPixel(imagedata, xx, yy);
+                intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+                max = Math.max(max, intensity);
+              }
+            }
+          }
+          this.writePixel(result, x, y, max, max, max);
+        }
+      }
+
+      ctx.putImageData(result, 0, 0);
     }
+
   }
 
 });
