@@ -12,8 +12,8 @@ new Vue({
 
   mounted: function () {
     //this.draw('assets/moonlanding.png');
-    this.draw('assets/images/fatia10.bmp', 'image');
-    this.draw('assets/images/gt_fatia10.bmp', 'image2');
+    this.draw('assets/images/fatia02.bmp', 'image');
+    this.draw('assets/images/gt_fatia02.bmp', 'image2');
   },
 
   methods: {
@@ -210,19 +210,103 @@ new Vue({
       }
 
       /* muda aqui gustavo 2 */
+      var maxValues = this.getMax(values);
+      console.log(values);
+      console.log(maxValues);
+      var cutPoints = this.getCutPoints(values, maxValues);
+      console.log(cutPoints);
+      return cutPoints;
+    },
 
-      const avg = values.reduce((a, b) => (a + (b||0))) / values.filter(v => v > 0).length;
-      const avgH = values.reduce((a, b) => ((b||0) > avg ? a + (b||0) : a)) / values.filter(v => v > avg).length;
-      const avgL = values.reduce((a, b) => ((b||0) < avg ? a + (b||0) : a)) / values.filter(v => v < avg).length;
-      console.log([avgL, avg, avgH])
-      return [avgL, avg, avgH];
+    getMax(list) {
+      var max1 = {pos:-1, value: 0};
+      var max2 = {pos:-1, value: 0};
+      var max3 = {pos:-1, value: 0};
+      for(let i = 0; i < list.length; i++) {
+        if(list[i] > max1.value){
+          max1.pos = i;
+          max1.value = list[i];
+        }
+      }
+      var lastValue = max1.value;
+      for(let i = max1.pos + 1; i < list.length; i++) {
+        if(lastValue >= list[i]){
+          lastValue = list[i];
+          continue;
+        }
+        if(list[i] > max2.value){
+          max2.pos = i;
+          max2.value = list[i];
+        }
+      }
+
+      lastValue = max1.value;
+      for(let i = max1.pos - 1; i >= 0; i--) {
+        if(lastValue >= list[i]){
+          lastValue = list[i];
+          continue;
+        }
+        if(list[i] > max3.value){
+          max3.pos = i;
+          max3.value = list[i];
+        }
+      }
+
+      // validating if this other is the middle one
+      var middleChange = false;
+      lastValue = max3.value;
+      for(let i = max3.pos - 1; i >= 0; i--) {
+        if(lastValue >= list[i]){
+          lastValue = list[i];
+          continue;
+        }
+        if(list[i] > max2.value){
+          max2.pos = i;
+          max2.value = list[i];
+          middleChange = true;
+        }
+      }
+      if(!middleChange){
+        lastValue = max2.value;
+        for(let i = max2.pos + 1; i < list.length; i++) {
+          if(lastValue >= list[i]){
+            lastValue = list[i];
+            continue;
+          }
+          if(list[i] > max3.value){
+            max3.pos = i;
+            max3.value = list[i];
+          }
+        }
+      }
+      console.log('-> ' + [max1.pos, max2.pos, max3.pos])
+      console.log('-> ' + [max1.pos, max2.pos, max3.pos].sort(function(a, b){return a - b}));
+      return [max1.pos, max2.pos, max3.pos].sort(function(a, b){return a - b});
+    },
+
+    getCutPoints(list, maxValues) {
+      var min1 = {pos:-1, value: 99999999999};
+      var min2 = {pos:-1, value: 99999999999};
+      for(let i = maxValues[0]; i < maxValues[1]; i++) {
+        if(list[i] < min1.value){
+          min1.pos = i;
+          min1.value = list[i];
+        } 
+      }
+      for(let i = maxValues[1]; i < maxValues[2]; i++) {
+        if(list[i] < min2.value){
+          min2.pos = i;
+          min2.value = list[i];
+        } 
+      }
+      return [min1.pos, min2.pos];
     },
 
     threshold(canvas) {
       const ctx = canvas.getContext("2d");
       const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      const [WHITE, GRAY, LIQUID] = this.calculateThreshold(this.histogram);
+      const [FIRST_CUT, SECOND_CUT] = this.calculateThreshold(this.histogram);
 
       for (let x = 0; x < imagedata.width; x++) {
         for (let y = 0; y < imagedata.height; y++) {
@@ -233,21 +317,13 @@ new Vue({
 
           /* muda aqui gustavo 1 */
 
-          if (intensity < WHITE) {
+          if (intensity < FIRST_CUT) {
             this.writePixel(imagedata, x, y, 0, 0, 255);
-          } else if (intensity > WHITE && intensity < LIQUID) {
+          } else if (intensity >= FIRST_CUT && intensity < SECOND_CUT) {
             this.writePixel(imagedata, x, y, 255, 0, 0);
-          } else if (intensity > LIQUID) {
+          } else if (intensity >= SECOND_CUT) {
             this.writePixel(imagedata, x, y, 0, 255, 0);
           }
-
-          /*if (intensity > WHITE && intensity < GRAY) {
-            this.writePixel(imagedata, x, y, 0, 0, 255);
-          } else if (intensity > GRAY && intensity < LIQUID) {
-            this.writePixel(imagedata, x, y, 255, 0, 0);
-          } else if (intensity > LIQUID && intensity < 255) {
-            this.writePixel(imagedata, x, y, 0, 255, 0);
-          }*/
         }
       }
 
