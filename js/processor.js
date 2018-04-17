@@ -12,8 +12,8 @@ new Vue({
 
   mounted: function () {
     //this.draw('assets/moonlanding.png');
-    this.draw('assets/images/fatia01.bmp', 'image');
-    this.draw('assets/images/gt_fatia01.bmp', 'image2');
+    this.draw('assets/images/fatia10.bmp', 'image');
+    this.draw('assets/images/gt_fatia10.bmp', 'image2');
   },
 
   methods: {
@@ -209,10 +209,12 @@ new Vue({
         }
       }
 
-      const avg = values.reduce((a, b) => (a + b)) / values.filter(v => v > 0).length;
-      const avgH = values.reduce((a, b) => (b > avg ? a + b : a)) / values.filter(v => v > avg).length;
-      const avgL = values.reduce((a, b) => (b < avg ? a + b : a)) / values.filter(v => v < avg).length;
+      /* muda aqui gustavo 2 */
 
+      const avg = values.reduce((a, b) => (a + (b||0))) / values.filter(v => v > 0).length;
+      const avgH = values.reduce((a, b) => ((b||0) > avg ? a + (b||0) : a)) / values.filter(v => v > avg).length;
+      const avgL = values.reduce((a, b) => ((b||0) < avg ? a + (b||0) : a)) / values.filter(v => v < avg).length;
+      console.log([avgL, avg, avgH])
       return [avgL, avg, avgH];
     },
 
@@ -227,13 +229,25 @@ new Vue({
           const pixel = this.getPixel(imagedata, x, y);
           const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
 
-          if (intensity > WHITE && intensity < GRAY) {
+          if(intensity === 0) continue;
+
+          /* muda aqui gustavo 1 */
+
+          if (intensity < WHITE) {
+            this.writePixel(imagedata, x, y, 0, 0, 255);
+          } else if (intensity > WHITE && intensity < LIQUID) {
+            this.writePixel(imagedata, x, y, 255, 0, 0);
+          } else if (intensity > LIQUID) {
+            this.writePixel(imagedata, x, y, 0, 255, 0);
+          }
+
+          /*if (intensity > WHITE && intensity < GRAY) {
             this.writePixel(imagedata, x, y, 0, 0, 255);
           } else if (intensity > GRAY && intensity < LIQUID) {
             this.writePixel(imagedata, x, y, 255, 0, 0);
           } else if (intensity > LIQUID && intensity < 255) {
             this.writePixel(imagedata, x, y, 0, 255, 0);
-          }
+          }*/
         }
       }
 
