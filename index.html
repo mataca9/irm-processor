@@ -1,35 +1,43 @@
 <link rel="stylesheet" href="assets/style.css"/>
 <div id="app">
-    <ul>
-      <li><button @click="adjustBrightness(image)">Adjust Brightness</button></li>
-      <li><button @click="drawHistogram(image)">Histogram</button></li>
-      <li><button @click="median(image,3)">Median image</button></li>
-      <li><button @click="median(histogram,3)">Median histogram</button></li>
-      <li><button @click="histogramMedian(image, histogram,3, 2)">Histogram + 2 x Median histogram</button></li>
-      <li><button @click="erosion(image,{x: 0, y: 1,data:[[10,null,10],[null,10,null],[10,null,10]]})">Erosion</button></li>
-      <li><button @click="dilation(image,{x: 0, y: 1,data:[[10,null,10],[null,10,null],[10,null,10]]})">Dilate</button></li>
-      <li><button @click="threshold(image)">Apply Threshold</button></li>
-      <li><button @click="compare(image, image2)">Compare</button></li>
-      <li><button class="pipeline" @click="pipeline()">Apply full</button></li>
-    </ul>
-    <table>
-      <tr>
-        <th>VP</th>
-        <th>FN</th>
-        <th>FP</th>
-        <th>TOTAL</th>
-      </tr>
-      <tr>
-        <td>{{VP}}</td>
-        <td>{{FN}}</td>
-        <td>{{FP}}</td>
-        <td>{{TOTAL}}</td>
-      </tr>
-    </table>
-  <canvas ref="image"></canvas>
-  <canvas ref="image2"></canvas>
+  <ul>
+    <li v-for="i in 10">
+      <button @click="loadImage(i)"> imagem {{pad(i)}}</button>
+    </li>
+  </ul>
+  <ul>
+    <li><button @click="drawHistogram(image)">Histogram</button></li>
+    <li><button @click="median(image,3)">Median image</button></li>
+    <li><button @click="median(histogram,3)">Median histogram</button></li>
+    <li><button @click="histogramMedian(image, histogram,3, 2)">Histogram + 2 x Median histogram</button></li>
+    <li><button @click="erosion(image,{x: 0, y: 1,data:[[10,null,10],[null,10,null],[10,null,10]]})">Erosion</button></li>
+    <li><button @click="dilation(image,{x: 0, y: 1,data:[[10,null,10],[null,10,null],[10,null,10]]})">Dilate</button></li>
+    <li><button @click="threshold(image, image2, image3, image4, histogram)">Apply Threshold</button></li>
+    <li><button @click="compare(image, image_result)">Compare</button></li>
+    <li><button class="pipeline" @click="pipeline()">Apply full</button></li>
+  </ul>
+  <table>
+    <tr>
+      <th>VP</th>
+      <th>FN</th>
+      <th>FP</th>
+      <th>TOTAL</th>
+    </tr>
+    <tr>
+      <td>{{VP}}</td>
+      <td>{{FN}}</td>
+      <td>{{FP}}</td>
+      <td>{{TOTAL}}</td>
+    </tr>
+  </table>
+  <canvas height="256px" ref="histogram"></canvas>
   <br/>
-  <canvas ref="histogram"></canvas>
+  <canvas ref="image2"></canvas>
+  <canvas ref="image3"></canvas>
+  <canvas ref="image4"></canvas>
+  <canvas ref="image"></canvas>
+  <br/>
+  <canvas ref="image_result"></canvas>
 </div>
 <script src="js/vue.js"></script>
 <script src="js/processor.js"></script>

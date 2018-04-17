@@ -1,22 +1,28 @@
 new Vue({
   el: "#app",
   data: {
-    imagedata: null,
-    image: null,
-    image2: null,
-    histogram: null,
     VP: 0,
     FN: 0,
     FP: 0
   },
 
   mounted: function () {
-    //this.draw('assets/moonlanding.png');
-    this.draw('assets/images/fatia02.bmp', 'image');
-    this.draw('assets/images/gt_fatia02.bmp', 'image2');
+    this.draw('assets/images/fatia01.bmp', 'image');
+    this.draw(`assets/images/fatia01.bmp`, 'image2');
+    this.draw(`assets/images/fatia01.bmp`, 'image3');
+    this.draw(`assets/images/fatia01.bmp`, 'image4');
+    this.draw('assets/images/gt_fatia01.bmp', 'image_result');
   },
 
   methods: {
+    loadImage(number){
+      this.draw(`assets/images/fatia${this.pad(number)}.bmp`, 'image');
+      this.draw(`assets/images/fatia${this.pad(number)}.bmp`, 'image2');
+      this.draw(`assets/images/fatia${this.pad(number)}.bmp`, 'image3');
+      this.draw(`assets/images/fatia${this.pad(number)}.bmp`, 'image4');
+      this.draw(`assets/images/gt_fatia${this.pad(number)}.bmp`, 'image_result');
+    },
+
     draw(file, target) {
       var img = new Image();
       img.src = file;
@@ -209,12 +215,8 @@ new Vue({
         }
       }
 
-      /* muda aqui gustavo 2 */
       var maxValues = this.getMax(values);
-      console.log(values);
-      console.log(maxValues);
       var cutPoints = this.getCutPoints(values, maxValues);
-      console.log(cutPoints);
       return cutPoints;
     },
 
@@ -302,11 +304,22 @@ new Vue({
       return [min1.pos, min2.pos];
     },
 
-    threshold(canvas) {
+    threshold(canvas, canvas2, canvas3, canvas4, histogram) {
       const ctx = canvas.getContext("2d");
       const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
+      const ctx2 = canvas2.getContext("2d");
+      const imagedata2 = ctx2.getImageData(0, 0, canvas.width, canvas.height);
+
+      const ctx3 = canvas3.getContext("2d");
+      const imagedata3 = ctx3.getImageData(0, 0, canvas.width, canvas.height);
+
+      const ctx4 = canvas4.getContext("2d");
+      const imagedata4 = ctx4.getImageData(0, 0, canvas.width, canvas.height);
+
       const [FIRST_CUT, SECOND_CUT] = this.calculateThreshold(this.histogram);
+
+      this.thresholdHistogram(histogram, FIRST_CUT, SECOND_CUT);
 
       for (let x = 0; x < imagedata.width; x++) {
         for (let y = 0; y < imagedata.height; y++) {
@@ -319,10 +332,44 @@ new Vue({
 
           if (intensity < FIRST_CUT) {
             this.writePixel(imagedata, x, y, 0, 0, 255);
+            this.writePixel(imagedata2, x, y, 0, 0, 255);
           } else if (intensity >= FIRST_CUT && intensity < SECOND_CUT) {
             this.writePixel(imagedata, x, y, 255, 0, 0);
+            this.writePixel(imagedata3, x, y, 255, 0, 0);
           } else if (intensity >= SECOND_CUT) {
             this.writePixel(imagedata, x, y, 0, 255, 0);
+            this.writePixel(imagedata4, x, y, 0, 255, 0);
+          }
+        }
+      }
+
+      ctx.putImageData(imagedata, 0, 0);
+      ctx2.putImageData(imagedata2, 0, 0);
+      ctx3.putImageData(imagedata3, 0, 0);
+      ctx4.putImageData(imagedata4, 0, 0);
+    },
+
+    thresholdHistogram(canvas, FIRST_CUT, SECOND_CUT){
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
+          const pixel = this.getPixel(imagedata, x, y);
+          const intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
+
+          if(intensity == 0){
+            if (x < FIRST_CUT) {
+              this.writePixel(imagedata, x, y, 0, 0, 255);
+            } else if (x >= FIRST_CUT && x < SECOND_CUT) {
+              this.writePixel(imagedata, x, y, 255, 0, 0);
+            } else if (x >= SECOND_CUT) {
+              this.writePixel(imagedata, x, y, 0, 255, 0);
+            }
+          }
+
+          if(x == FIRST_CUT || x == SECOND_CUT){
+            this.writePixel(imagedata, x, y, 0, 0, 0);
           }
         }
       }
@@ -444,7 +491,11 @@ new Vue({
       //this.median(this.histogram, 3);
       //this.median(this.histogram, 3);
       //this.median(this.histogram, 3);
-      this.threshold(this.image);
+      this.threshold(this.image,this.image2,this.image3,this.image4, this.histogram);
+    },
+
+    pad(i){
+      return i.toString().length == 1 ? '0' + i : i;
     }
   },
 
