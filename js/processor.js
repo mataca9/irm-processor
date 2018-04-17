@@ -4,7 +4,10 @@ new Vue({
     imagedata: null,
     image: null,
     image2: null,
-    histogram: null
+    histogram: null,
+    VP: 0,
+    FN: 0,
+    FP: 0
   },
 
   mounted: function () {
@@ -18,7 +21,7 @@ new Vue({
       var img = new Image();
       img.src = file;
       img.crossOrigin = "Anonymous";
-      
+
       this[target] = this.$refs[target];
 
       img.addEventListener("load", () => {
@@ -97,7 +100,7 @@ new Vue({
       }
 
       // Constroi histograma
-      this.histogram = this.$refs['histogram_canvas'];
+      this.histogram = this.$refs['histogram'];
       this.histogram.width = 512;
       this.histogram.height = 256;
       const hctx = this.histogram.getContext("2d");
@@ -124,6 +127,8 @@ new Vue({
       }
       histogram_imagedata.data = data;
       hctx.putImageData(histogram_imagedata, 0, 0);
+
+      return;
     },
 
     getMaxIntensity(imagedata) {
@@ -290,7 +295,7 @@ new Vue({
               if (data[ex][ey]) {
                 pixel = this.getPixel(imagedata, xx, yy);
                 intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
-                max = Math.max(max, intensity + data[ex][ey]);
+                max = Math.max(max, intensity);
               }
             }
           }
@@ -299,8 +304,63 @@ new Vue({
       }
 
       ctx.putImageData(result, 0, 0);
-    }
+    },
 
+    histogramMedian(canvas, canvas_histogram, w, times) {
+      this.drawHistogram(canvas);
+
+      for (let i = 0; i < times; i++) {
+        this.median(this.histogram, w);
+      }
+    },
+
+    compare(canvas, canvas2) {
+      const ctx = canvas.getContext("2d");
+      const ctx2 = canvas2.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const imagedata2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+
+      [this.FP, this.FN, this.VP] = [0,0,0];
+
+      for (let x = 0; x < imagedata.width; x++) {
+        for (let y = 0; y < imagedata.height; y++) {
+          const pixel = this.getPixel(imagedata, x, y);
+          const pixel2 = this.getPixel(imagedata2, x, y);
+
+          if (this.getIntensity(pixel.r, pixel.g, pixel.b) == 0 && this.getIntensity(pixel2.r, pixel2.g, pixel2.b) == 0) continue;
+
+          if (pixel.r == pixel2.r && pixel.g == pixel2.g && pixel.b == pixel2.b) {
+            this.VP++;
+          } else if ((pixel.r != 255 && pixel.g != 255 && pixel.b != 255) &&
+            (pixel2.r == 255 || pixel2.g == 255 || pixel2.b == 255)) {
+            this.FN++;
+          } else if(pixel.r != pixel2.r || pixel.g != pixel2.g || pixel.b != pixel2.b){
+            this.FP++;
+          }
+        }
+      }
+
+    },
+
+    pipeline() {
+      const element = { x: 2, y: 2, data: [[10, null, 10], [null, 10, null], [10, null, 10]] };
+      this.erosion(this.image, element);
+      this.dilation(this.image, element);
+      this.median(this.image, 3);
+      this.drawHistogram(this.image);
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.median(this.histogram, 3);
+      this.threshold(this.image);
+    }
+  },
+
+  computed :{
+    TOTAL() {
+      return this.VP + this.FN + this.FP;
+    }
   }
 
 });
