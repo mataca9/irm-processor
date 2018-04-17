@@ -433,16 +433,17 @@ new Vue({
     },
 
     pipeline() {
-      const element = { x: 2, y: 2, data: [[10, null, 10], [null, 10, null], [10, null, 10]] };
+      //const element = { x: 2, y: 2, data: [[10, null, 10], [null, 10, null], [10, null, 10]] };
+      const element = {x: 0, y: 1,data:[[10,null,10],[null,10,null],[10,null,10]]};
       this.erosion(this.image, element);
       this.dilation(this.image, element);
       this.median(this.image, 3);
       this.drawHistogram(this.image);
       this.median(this.histogram, 3);
       this.median(this.histogram, 3);
-      this.median(this.histogram, 3);
-      this.median(this.histogram, 3);
-      this.median(this.histogram, 3);
+      //this.median(this.histogram, 3);
+      //this.median(this.histogram, 3);
+      //this.median(this.histogram, 3);
       this.threshold(this.image);
     }
   },
