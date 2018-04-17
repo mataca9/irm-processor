@@ -3,25 +3,28 @@ new Vue({
   data: {
     imagedata: null,
     image: null,
+    image2: null,
     histogram: null
   },
 
   mounted: function () {
     //this.draw('assets/moonlanding.png');
-    this.draw('assets/images/fatia01.bmp');
+    this.draw('assets/images/fatia01.bmp', 'image');
+    this.draw('assets/images/gt_fatia01.bmp', 'image2');
   },
 
   methods: {
-    draw(file) {
+    draw(file, target) {
       var img = new Image();
       img.src = file;
       img.crossOrigin = "Anonymous";
-      this.image = this.$refs['image'];
+      
+      this[target] = this.$refs[target];
 
       img.addEventListener("load", () => {
-        this.image.width = img.width;
-        this.image.height = img.height;
-        this.image
+        this[target].width = img.width;
+        this[target].height = img.height;
+        this[target]
           .getContext("2d")
           .drawImage(
             img,
@@ -31,10 +34,9 @@ new Vue({
             img.height,
             0,
             0,
-            this.image.width,
-            this.image.height
+            this[target].width,
+            this[target].height
           );
-        this.imagedata = this.getImageData(img);
       });
     },
 
@@ -77,8 +79,10 @@ new Vue({
       d[i + 2] = b;
     },
 
-    drawHistogram() {
-      const d = this.imagedata.data;
+    drawHistogram(canvas) {
+      const ctx = canvas.getContext("2d");
+      const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imagedata.data;
       const values = [];
 
       // Gera lista de intensidades
@@ -96,7 +100,7 @@ new Vue({
       this.histogram = this.$refs['histogram_canvas'];
       this.histogram.width = 512;
       this.histogram.height = 256;
-      const ctx = this.histogram.getContext("2d");
+      const hctx = this.histogram.getContext("2d");
       const histogram_imagedata = ctx.createImageData(this.histogram.width, this.histogram.height);
 
       const max = values.reduce((a, b) => { return Math.max(a, b) });
@@ -119,7 +123,7 @@ new Vue({
         }
       }
       histogram_imagedata.data = data;
-      ctx.putImageData(histogram_imagedata, 0, 0);
+      hctx.putImageData(histogram_imagedata, 0, 0);
     },
 
     getMaxIntensity(imagedata) {
@@ -232,7 +236,6 @@ new Vue({
     },
 
     erosion(canvas, element) {
-      console.log(element)
       const ctx = canvas.getContext("2d");
       const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const result = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -254,7 +257,7 @@ new Vue({
               if (data[ex][ey]) {
                 pixel = this.getPixel(imagedata, xx, yy);
                 intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
-                min = Math.min(min, intensity);
+                min = Math.min(min, intensity - data[ex][ey]);
               }
             }
           }
@@ -266,7 +269,6 @@ new Vue({
     },
 
     dilation(canvas, element) {
-      console.log(element)
       const ctx = canvas.getContext("2d");
       const imagedata = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const result = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -288,7 +290,7 @@ new Vue({
               if (data[ex][ey]) {
                 pixel = this.getPixel(imagedata, xx, yy);
                 intensity = this.getIntensity(pixel.r, pixel.g, pixel.b);
-                max = Math.max(max, intensity);
+                max = Math.max(max, intensity + data[ex][ey]);
               }
             }
           }
