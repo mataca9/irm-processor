@@ -8,5 +8,5 @@
 `$ npm install`
 
 ## Run
-- `$ node server`
+- `$ npm start`
 - Then access localhost:8080
